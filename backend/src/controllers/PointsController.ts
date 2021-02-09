@@ -1,23 +1,23 @@
-import { request, Request, response, Response } from 'express';
+import { Request, Response } from 'express';
 import knex from '../database/connection';
 
 class PointsController {
   async index(req: Request, res: Response) {
-    const { city, uf, itens } = request.query;
+    const { city, uf, itens } = req.query;
 
     const parsedItens = String(itens)
       .split(',')
       .map(item => Number(item.trim()));
 
     const points = await knex('points')  
-      .join('point_itens', 'points.id', '=', 'point_itens.point.id')
+      .join('point_itens', 'points.id', '=', 'point_itens.point_id')
       .whereIn('point_itens.item_id', parsedItens)
       .where('city', String(city))
       .where('uf', String(uf))
       .distinct()
       .select('points.*');
 
-    return response.json(points);  
+    return res.json(points);  
   }
 
   async show(req:Request, res: Response) {
@@ -30,13 +30,11 @@ class PointsController {
     }
 
     const itens = await knex('itens')
-      .join('point_itens', 'itens_id', '=', 'point_itens.item_id')
+      .join('point_itens', 'itens.id', '=', 'point_itens.item_id')
       .where('point_itens.point_id', id)
       .select('itens.title');
 
-    const pointItens = Object.assign(point, itens);
-
-    return res.json({ pointItens });
+    return res.json({ point, itens });
   }
 
   async create(req:Request, res: Response) {
